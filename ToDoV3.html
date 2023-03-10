@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+
+        class Note {
+            isCompleted = false;
+
+            constructor(title, text) {
+            this.title = title;
+            this.text = text;
+            }
+
+            toggle() {
+            this.isCompleted = !this.isCompleted;
+            }
+
+            edit(title, text) {
+                this.title = title;
+                this.text = text;
+            }
+        }
+
+        class List {
+            #name;
+            #storage;
+
+            constructor(name, storageType) {
+            this.#name = name;
+            this.#storage = new Storage(storageType);
+            this.list = this.#initList();
+            }
+
+            addNote(title, text) {
+                if (this.#checkUniq(title)) {
+                this.list.push(new Note(title, text));
+                }
+
+                this.#save();
+
+                return this.list;
+            }
+
+            editNote(title, newTitle, newText, confirmation) {
+                const index = this.list.findIndex((note) => note.title === title);
+
+                if (confirmation === true && title === newTitle || this.#checkUniq(newTitle)) {
+                    this.list[index].edit(newTitle, newText);
+                }
+
+                this.#save();
+            }
+
+            removeNote(title, confirmation) {
+                const index = this.list.findIndex((note) => note.title === title);
+                if (confirmation) {
+                    this.list.splice(index, 1);
+                }
+
+                this.#save();
+            }
+
+            toggleNote(title) {
+                this.list.forEach((note) => {
+                    if (note.title === title) {
+                        note.toggle();
+                    }
+                });
+                this.#save();
+                return this.list;
+            }
+
+            #checkUniq(title) {
+                return !this.list.find((note) => note.title === title);
+            }
+
+            get info() {
+                return this.list.reduce((info, note) => {
+                    if (!info.total) {
+                        info.total = this.list.length;
+                    }
+
+                    if (!info[note.isCompleted]) {
+                        info[note.isCompleted] = 0;
+                    }
+                    info[note.isCompleted]++;
+                    return info;
+                }, {});
+            }
+
+            #save() {
+                this.#storage.setItem(this.#name, this.list);
+            }
+
+            #initList() {
+                return this.#storage.getItem(this.#name)?.map((item) => new Note(item.title, item.text)) ?? [];
+            }
+        }
+
+        class Storage {
+            constructor(storageType) {
+            this.storageType = storageType;
+            }
+
+            setItem(key, value) {
+                window[this.storageType].setItem(key, JSON.stringify(value));
+            }
+
+            getItem(key) {
+                const item = window[this.storageType].getItem(key);
+                return item ? JSON.parse(item) : null;
+            }
+
+            removeItem(key) {
+                window[this.storageType].removeItem(key);
+            }
+        }
+
+        const list = new List("my-storage-list", "localStorage"); 
+        const list2 = new List("my-session-list", "sessionStorage"); 
+    </script>
+</body>
+</html>
